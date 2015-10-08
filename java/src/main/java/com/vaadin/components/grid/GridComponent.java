@@ -467,7 +467,7 @@ public class GridComponent implements SelectionHandler<Object>,
         if (!updating) {
             grid.setHeight("100%");
 
-            if (container.getClientHeight() == 0) {
+            if (container.getClientHeight() == 0 && isGridVisible()) {
                 if (rows > 0) {
                     grid.setHeightByRows(rows);
                 } else {
