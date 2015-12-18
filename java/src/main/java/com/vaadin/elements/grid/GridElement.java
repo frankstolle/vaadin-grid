@@ -23,6 +23,7 @@ import com.google.gwt.dom.client.TableElement;
 import com.google.gwt.query.client.js.JsUtils;
 import com.google.gwt.query.client.plugins.observe.Observe;
 import com.google.gwt.query.client.plugins.observe.Observe.Changes.ChangeRecord;
+import com.google.gwt.query.client.plugins.observe.Observe.Changes.MutationRecord;
 import com.google.gwt.query.client.plugins.observe.Observe.ObserveListener;
 import com.google.gwt.query.client.plugins.widgets.WidgetsUtils;
 import com.google.gwt.user.client.Timer;
@@ -148,26 +149,43 @@ public class GridElement implements SelectionHandler<Object>,
         return container;
     }
 
-    public void init(Element container, TableElement lightDomElement,
+    private void readTable(TableElement table) {
+        if (TableElement.is(table)) {
+            new GridLightDomTable(table, this);
+            // Check if we have the data in the DOM
+            GridDomTableDataSource ds = GridDomTableDataSource.createInstance(table, this);
+            if (ds != null) {
+                grid.setDataSource(ds);
+            }
+        }
+    }
+
+    public void init(Element container, TableElement table,
             Element gridContainer, Element measureObject) {
+
         if (this.container == null) {
             this.container = container;
             this.measureObject = measureObject;
-
-            if (lightDomElement != null) {
-                lightDom = new GridLightDomTable(lightDomElement, this);
-                // Check if we have the data in the DOM
-                GridDomTableDataSource ds = GridDomTableDataSource
-                        .createInstance(lightDomElement, this);
-                if (ds != null) {
-                    grid.setDataSource(ds);
-                }
+            if (table != null) {
+                readTable(table);
+            } else {
+                final Observe observable = $(container).as(Observe.Observe);
+                observable.mutation("childList", mutations -> {
+                    for (MutationRecord m : mutations) {
+                        if (m.type() == "childList") {
+                            TableElement t = (TableElement)$(m.addedNodes()).filter("table").get(0);
+                            if (t != null) {
+                                readTable(t);
+                                observable.disconnect();
+                            }
+                        }
+                    }
+                });
             }
 
             gridContainer.appendChild(grid.getElement());
             WidgetsUtils.attachWidget(grid, null);
         }
-
         updating = false;
         Scheduler.get().scheduleFinally(() -> updateHeight());
     }
