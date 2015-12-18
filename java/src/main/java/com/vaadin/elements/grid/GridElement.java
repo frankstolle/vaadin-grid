@@ -148,26 +148,28 @@ public class GridElement implements SelectionHandler<Object>,
         return container;
     }
 
-    public void init(Element container, TableElement lightDomElement,
-            Element gridContainer, Element measureObject) {
+    Element table;
+
+    public void readTable(TableElement table) {
+        if (TableElement.is(table)) {
+            new GridLightDomTable(table, this);
+            // Check if we have the data in the DOM
+            GridDomTableDataSource ds = GridDomTableDataSource.createInstance(table, this);
+            if (ds != null) {
+                grid.setDataSource(ds);
+            }
+        }
+    }
+
+    public void init(Element container, Element gridContainer,
+            Element measureObject) {
         if (this.container == null) {
             this.container = container;
             this.measureObject = measureObject;
 
-            if (lightDomElement != null) {
-                lightDom = new GridLightDomTable(lightDomElement, this);
-                // Check if we have the data in the DOM
-                GridDomTableDataSource ds = GridDomTableDataSource
-                        .createInstance(lightDomElement, this);
-                if (ds != null) {
-                    grid.setDataSource(ds);
-                }
-            }
-
             gridContainer.appendChild(grid.getElement());
             WidgetsUtils.attachWidget(grid, null);
         }
-
         updating = false;
         Scheduler.get().scheduleFinally(() -> updateHeight());
     }
